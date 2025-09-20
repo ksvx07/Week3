@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
+using Unity.VisualScripting;
 
 public class BattleManager : Singleton<BattleManager>
 {
@@ -39,7 +40,7 @@ public class BattleManager : Singleton<BattleManager>
     public void StartNightBattle()
     {
         dayTime = false;
-        enemyTeam = new(UnitList.bosses);
+        enemyTeam.Add(UnitList.bosses[GameManager.Instance.Day - 1]);
         StartBattle();
     }
 
@@ -78,7 +79,7 @@ public class BattleManager : Singleton<BattleManager>
             // 적군 턴
             foreach (var enemy in enemyTeam)
             {
-                if (!enemy.IsDead())
+                if (!enemy.IsDead() && playerTeam.Count > 0)
                 {
                     var target = playerTeam[Random.Range(0, playerTeam.Count)];
                     Debug.Log($"{enemy.name} attacks {target.name}!");
@@ -100,7 +101,7 @@ public class BattleManager : Singleton<BattleManager>
             // 아군 턴 (모든 살아있는 유닛이 공격)
             foreach (var player in playerTeam)
             {
-                if (!player.IsDead())
+                if (!player.IsDead() && enemyTeam.Count > 0)
                 {
                     var target = enemyTeam[Random.Range(0, enemyTeam.Count)];
                     player.Attack(target);
@@ -118,6 +119,8 @@ public class BattleManager : Singleton<BattleManager>
         Debug.Log(playerTeam.Count > 0 ? "플레이어 승리!" : "적 승리!");
     }
 
+
+    // Stamp 능력들
     private void ApplyAttackStamps(Unit player, Unit target)
     {
         foreach (Item stamp in Inventory.Instance.myStamps)
