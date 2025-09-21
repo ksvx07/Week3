@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -22,6 +23,14 @@ public class Unit
     public void Attack(Unit target)
     {
         target.TakeDamage(AttackPower);
+    }
+
+    public void AttackAll(List<Unit> targets)
+    {
+        foreach (Unit target in targets)
+        {
+            target.TakeDamage(AttackPower / 2);
+        }
     }
 
     public void TakeDamage(int damage)

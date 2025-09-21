@@ -70,6 +70,36 @@ public class Inventory : Singleton<Inventory>
         }
     }
 
+    public void FeedButton(string foodName)
+    {
+        foreach (Item item in items)
+        {
+            if (item.itemName == foodName)
+            {
+                if (item.quantity > 0)
+                {
+                    item.quantity--;
+                    if (foodName == cheapFood)
+                    {
+                        GameManager.Instance.SetHealth(GameManager.Instance.Health + 2);
+                    }
+                    else if (foodName == expensiveFood)
+                    {
+                        GameManager.Instance.SetHealth(GameManager.Instance.Health * 2);
+                    }
+                    else if (foodName == water)
+                    {
+                        GameManager.Instance.SetPower(GameManager.Instance.Power + 1);
+                    }
+                }
+                else
+                {
+                    Debug.Log($"{foodName} 없어...");
+                }
+            }
+        }
+    }
+
     private void AddMyStamp(Item thisStamp)
     {
         myStamps.Add(thisStamp);
@@ -96,7 +126,8 @@ public class Inventory : Singleton<Inventory>
         }
 
         UIManager.Instance.SetActiveReward(false);
-        StateManager.ChangeState(GameState.Home); // 집으로 돌아가기
+
+        BattleManager.Instance.GoToHome();
     }
 
 

@@ -1,6 +1,8 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
-public class BattleUI : MonoBehaviour
+public class BattleUIManager : MonoBehaviour
 {
     [SerializeField] private Vector2 playerRect = new(1, 1);
     [SerializeField] private Vector2 playerSize = new(1, 1);
@@ -11,13 +13,14 @@ public class BattleUI : MonoBehaviour
 
     [SerializeField] private Vector2 randPosRange = new(0.1f, 0.1f);
 
-
-
     [SerializeField] private Transform playerParent;
     [SerializeField] private Transform enemyParent;
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private GameObject enemyPrefab;
 
+
+    public List<Vector2Int> playerGridList;
+    public List<Vector2Int> enemyGridList;
 
     private Vector2Int playerGridNum = new(1, 1);
     private Vector2Int enemyGridNum = new(1, 1);
@@ -25,11 +28,38 @@ public class BattleUI : MonoBehaviour
     private int playerNum = 0;
     private int enemyNum = 0;
 
-    private Vector2 playerScale = new(0.1f, 0.1f);
+    private Vector2 playerScale = new(1f, 1f);
 
-    public void InitRectNum(Vector3 thisScale)
+    public void EndBattle()
     {
-        playerScale = thisScale;
+        foreach (Transform child in playerParent)
+        {
+            Destroy(child.gameObject);
+        }
+        foreach (Transform child in enemyParent)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+    public void InitBattle(Unit player, Unit enemy)
+    {
+        playerGridList = new();
+        enemyGridList = new();
+        SetPlayerScale(player, enemy);
+        InitRectNum();
+        attackCount = 0;
+    }
+
+    private void SetPlayerScale(Unit player, Unit enemy)
+    {
+        float playerValue = player.AttackPower + player.MaxHP;
+        float enemyValue = enemy.AttackPower + enemy.MaxHP;
+
+        playerScale = enemyPrefab.transform.localScale * Mathf.Sqrt(playerValue / enemyValue);
+    }
+
+    private void InitRectNum()
+    {
         playerNum = 0;
         enemyNum = 0;
         playerGridNum.x = (int)(playerRect.x / (playerSize.x * playerScale.x * rightMargin));
@@ -37,22 +67,59 @@ public class BattleUI : MonoBehaviour
         enemyGridNum.x = (int)(enemyRect.x / (enemySize.x * rightMargin));
         enemyGridNum.y = (int)(enemyRect.y / (enemySize.y * topMargin));
     }
+
+    public async void DeletePlayerUI(int num)
+    {
+        playerGridList.RemoveAt(num);
+        await Task.Delay(700);
+        Destroy(playerParent.GetChild(num).gameObject);
+    }
+
     private Vector2 SpawnPlayerPosition()
     {
-        Vector2Int playerGrid = Vector2Int.zero;
-        int i = playerNum;
-        while (i >= playerGridNum.x)
+        for (int y = 0; y < playerGridNum.y; y++)
         {
-            if (playerGrid.y > playerGridNum.y)
-                break;
-            i -= playerGridNum.x;
-            playerGrid.y++;
+            for (int x = 0; x < playerGridNum.x; x++)
+            {
+                var pos = new Vector2Int(x, y);
+                if (!playerGridList.Contains(pos))
+                {
+                    playerGridList.Add(pos);
+                    return new Vector2(pos.x * playerSize.x * playerScale.x * topMargin, pos.y * playerSize.y * playerScale.y * rightMargin);
+                }
+            }
         }
-        playerGrid.x = i;
-        playerNum++;
 
-        return new Vector2(playerGrid.x * playerSize.x * playerScale.x * topMargin, playerGrid.y * playerSize.y * playerScale.y * rightMargin);
+        int z = 0;
+        while (true)
+        {
+            var pos = new Vector2Int(z, playerGridNum.y);
+            if (!playerGridList.Contains(pos))
+            {
+                playerGridList.Add(pos);
+                return new Vector2(pos.x * playerSize.x * playerScale.x * topMargin, pos.y * playerSize.y * playerScale.y * rightMargin);
+            }
+            z++;
+        }
+
     }
+
+    // private Vector2 SpawnPlayerPosition()
+    // {
+    //     Vector2Int playerGrid = Vector2Int.zero;
+    //     int i = playerNum;
+    //     while (i >= playerGridNum.x)
+    //     {
+    //         if (playerGrid.y > playerGridNum.y)
+    //             break;
+    //         i -= playerGridNum.x;
+    //         playerGrid.y++;
+    //     }
+    //     playerGrid.x = i;
+    //     playerNum++;
+    //     playerGridList.Add(playerGrid);
+    //     return new Vector2(playerGrid.x * playerSize.x * playerScale.x * topMargin, playerGrid.y * playerSize.y * playerScale.y * rightMargin);
+    // }
 
     private Vector2 SpawnEnemyPosition()
     {
@@ -67,7 +134,7 @@ public class BattleUI : MonoBehaviour
         }
         enemyGrid.x = i;
         enemyNum++;
-
+        enemyGridList.Add(enemyGrid);
         return new Vector2(enemyGrid.x * enemySize.x * topMargin, enemyGrid.y * enemySize.y * rightMargin);
     }
 
@@ -84,6 +151,36 @@ public class BattleUI : MonoBehaviour
         Vector2 parentPos = new(enemyParent.position.x, enemyParent.position.y);
         Vector2 randPos = new(Random.Range(-randPosRange.x, randPosRange.x), Random.Range(-randPosRange.y, randPosRange.y));
         Instantiate(enemyPrefab, -SpawnEnemyPosition() + parentPos + randPos, Quaternion.identity, enemyParent);
+    }
 
+    private int playerAttackNum = 0;
+
+    private int attackCount = 0;
+    public void AttackPlayerAction()
+    {
+        playerParent.GetChild(playerAttackNum).GetComponent<Animator>().SetTrigger("Attack");
+        attackCount++;
+        if (attackCount >= BattleManager.Instance.attackCount)
+        {
+            attackCount = 0;
+            playerAttackNum++;
+        }
+    }
+
+    public void EndPlayerTurn()
+    {
+        playerAttackNum = 0;
+    }
+
+    private int enemyAttackNum = 0;
+    public void AttackEnemyAction()
+    {
+        enemyParent.GetChild(enemyAttackNum).GetComponent<Animator>().SetTrigger("Attack");
+        enemyAttackNum++;
+    }
+
+    public void EndEnemyTurn()
+    {
+        enemyAttackNum = 0;
     }
 }

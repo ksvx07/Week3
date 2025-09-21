@@ -1,31 +1,47 @@
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
-using Unity.VisualScripting;
+using System.Threading.Tasks;
 
 public class BattleManager : Singleton<BattleManager>
 {
     [SerializeField] private float battleDelay = 0.1f;
 
-    public List<Unit> playerTeam;
+    private List<Unit> playerTeam;
     private List<Unit> enemyTeam;
-    public List<Unit> addedPlayerTeam;
+    private List<Unit> addedPlayerTeam;
+    private List<Unit> addedEnemyTeam;
 
     public bool dayTime;
+    public int attackCount = 1;
+    private BattleUIManager battleUIManager;
+
+    void Start()
+    {
+        battleUIManager = GetComponent<BattleUIManager>();
+        addedPlayerTeam = new();
+        addedEnemyTeam = new();
+    }
 
     public void StartBattle()
     {
         int life = 0;
+        attackCount = 1;
         foreach (Item stamp in Inventory.Instance.myStamps)
         {
             if (stamp.itemName == Inventory.Instance.moreLifeStamp)
                 life++;
+            if (stamp.itemName == Inventory.Instance.doubleAttackStamp)
+                attackCount++;
         }
 
         playerTeam = new()
         {
             new(GameManager.Instance.ouroboros, GameManager.Instance.Power, GameManager.Instance.Health, life)
         };
+        battleUIManager.InitBattle(playerTeam[0], enemyTeam[0]);
+        battleUIManager.SpawnPlayer();
+        battleUIManager.SpawnEnemy();
 
         StartCoroutine(BattleLoop());
     }
@@ -33,14 +49,20 @@ public class BattleManager : Singleton<BattleManager>
     public void StartDayBattle()
     {
         dayTime = true;
-        enemyTeam = new(UnitList.enemies);
+        enemyTeam = new()
+        {
+            UnitList.enemies[GameManager.Instance.Day - 1].Clone()
+        };
         StartBattle();
     }
 
     public void StartNightBattle()
     {
         dayTime = false;
-        enemyTeam.Add(UnitList.bosses[GameManager.Instance.Day - 1]);
+        enemyTeam = new()
+        {
+            UnitList.bosses[GameManager.Instance.Day - 1].Clone()
+        };
         StartBattle();
     }
 
@@ -65,60 +87,131 @@ public class BattleManager : Singleton<BattleManager>
         }
         else
         {
-            StateManager.ChangeState(GameState.Home); // 집으로 돌아가기
+            GoToHome(); // 집으로 돌아가기
         }
 
     }
 
+    public void GoToHome()
+    {
+        battleUIManager.EndBattle();
+        StateManager.ChangeState(GameState.Home);
+    }
+
     private IEnumerator BattleLoop()
     {
+        Debug.Log("전투 시작!");
+
+        int bossAttackCount = 0;
+
         while (playerTeam.Count > 0 && enemyTeam.Count > 0)
         {
-            Debug.Log("전투 시작!");
 
             // 적군 턴
             foreach (var enemy in enemyTeam)
             {
+
                 if (!enemy.IsDead() && playerTeam.Count > 0)
                 {
-                    var target = playerTeam[Random.Range(0, playerTeam.Count)];
-                    Debug.Log($"{enemy.name} attacks {target.name}!");
-                    enemy.Attack(target);
-                    ApplyHitStamps(target, enemy);
-                    if (target.IsDead())
+
+                    if (dayTime || bossAttackCount < 2)
                     {
-                        GameManager.Instance.SetPower(GameManager.Instance.Power + 1);
-                        GameManager.Instance.SetHealth(GameManager.Instance.Health + 1);
+                        int targetNum = Random.Range(0, playerTeam.Count);
+                        Unit target = playerTeam[targetNum];
+                        Debug.Log($"{enemy.name} attacks {target.name}!");
+                        enemy.Attack(target);
+                        battleUIManager.AttackEnemyAction();
+                        ApplyHitStamps(target);
+                        if (target.IsDead())
+                        {
+                            GameManager.Instance.SetPower(GameManager.Instance.Power + 1);
+                            GameManager.Instance.SetHealth(GameManager.Instance.Health + 1);
+                        }
+                        target.Revive();
+                        if (target.IsDead())
+                        {
+                            playerTeam.Remove(target);
+                            battleUIManager.DeletePlayerUI(targetNum);
+                        }
                     }
-                    target.Revive();
-                    if (target.IsDead())
-                        playerTeam.Remove(target);
+                    else
+                    {
+                        List<int> deadList = new();
+                        int i = 0;
+                        enemy.AttackAll(playerTeam);
+                        battleUIManager.AttackEnemyAction();
+                        foreach (Unit tar in playerTeam)
+                        {
+                            ApplyHitStamps(tar);
+                            if (tar.IsDead())
+                            {
+                                GameManager.Instance.SetPower(GameManager.Instance.Power + 1);
+                                GameManager.Instance.SetHealth(GameManager.Instance.Health + 1);
+                            }
+                            tar.Revive();
+                            if (tar.IsDead())
+                                deadList.Add(i);
+                            i++;
+                        }
+                        Debug.Log(playerTeam.Count);
+                        for (int k = playerTeam.Count - 1; k >= 0; k--)
+                        {
+                            if (playerTeam[k].IsDead())
+                            {
+                                playerTeam.RemoveAt(k);
+                                battleUIManager.DeletePlayerUI(k);
+                            }
+                        }
+                        Debug.Log(playerTeam.Count);
+                    }
+
+                    yield return new WaitForSeconds(battleDelay);
 
                 }
-                yield return new WaitForSeconds(battleDelay);
             }
+
+            if (!dayTime)
+            {
+                bossAttackCount++;
+                if (bossAttackCount > 2)
+                {
+                    bossAttackCount = 0;
+                }
+
+            }
+
+            enemyTeam.AddRange(addedEnemyTeam);
+            addedEnemyTeam = new();
+            battleUIManager.EndEnemyTurn();
 
             // 아군 턴 (모든 살아있는 유닛이 공격)
             foreach (var player in playerTeam)
             {
-                if (!player.IsDead() && enemyTeam.Count > 0)
+                for (int i = 0; i < attackCount; i++)
                 {
-                    var target = enemyTeam[Random.Range(0, enemyTeam.Count)];
-                    player.Attack(target);
-                    ApplyAttackStamps(player, target);
-                    target.Revive();
-                    if (target.IsDead())
-                        enemyTeam.Remove(target);
+                    if (!player.IsDead() && enemyTeam.Count > 0)
+                    {
+                        var target = enemyTeam[Random.Range(0, enemyTeam.Count)];
+                        player.Attack(target);
+                        battleUIManager.AttackPlayerAction();
+                        ApplyAttackStamps(player, target);
+                        target.Revive();
+                        if (target.IsDead())
+                            enemyTeam.Remove(target);
+                        yield return new WaitForSeconds(battleDelay); // 턴 텀
+                    }
                 }
-                yield return new WaitForSeconds(battleDelay); // 턴 텀
+
             }
+            yield return new WaitForSeconds(battleDelay);
+            battleUIManager.EndPlayerTurn();
             playerTeam.AddRange(addedPlayerTeam);
+            addedPlayerTeam = new();
         }
 
         EndBattle();
         Debug.Log(playerTeam.Count > 0 ? "플레이어 승리!" : "적 승리!");
     }
-
 
     // Stamp 능력들
     private void ApplyAttackStamps(Unit player, Unit target)
@@ -129,18 +222,7 @@ public class BattleManager : Singleton<BattleManager>
                 ApplyDoublePowerAfterAttackStamp(player);
             if (stamp.itemName == Inventory.Instance.duplicateAfterAttackStamp)
                 ApplyDuplicateAfterAttackStamp(player);
-            if (stamp.itemName == Inventory.Instance.doubleAttackStamp)
-                ApplyDoubleAttackStamp(player, target);
         }
-    }
-
-    private void ApplyDoubleAttackStamp(Unit player, Unit target)
-    {
-        target.Revive();
-        if (target.IsDead())
-            enemyTeam.Remove(target);
-        var newTarget = enemyTeam[Random.Range(0, enemyTeam.Count)];
-        player.Attack(newTarget);
     }
 
     private void ApplyDoublePowerAfterAttackStamp(Unit player)
@@ -155,9 +237,10 @@ public class BattleManager : Singleton<BattleManager>
         Unit clone = player.Clone();
         clone.name = GameManager.Instance.ouroborosClone;
         addedPlayerTeam.Add(clone);
+        battleUIManager.SpawnPlayer();
     }
 
-    private void ApplyHitStamps(Unit player, Unit enemy)
+    private void ApplyHitStamps(Unit player)
     {
         foreach (Item stamp in Inventory.Instance.myStamps)
         {

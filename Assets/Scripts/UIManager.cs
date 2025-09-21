@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,12 +49,22 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private GameObject stampPrefab;
 
 
+    [Header("Feed Buttons")]
+    [SerializeField] private Button feedToHomeButton;
+    [SerializeField] private Button feedButton1;
+    [SerializeField] private Button feedButton2;
+    [SerializeField] private Button feedButton3;
+    [SerializeField] private Button feedButton4;
+    [SerializeField] private Button feedButton5;
+    [SerializeField] private Button feedButton6;
+
+
 
     public void OnHomeToWorkButton() => StateManager.ChangeState(GameState.Work);
     public void OnHomeToShopButton() => StateManager.ChangeState(GameState.Shop);
     public void OnHomeToFeedButton() => StateManager.ChangeState(GameState.Feed);
     public void OnHomeToBattleButton() => StateManager.ChangeState(GameState.DayBattle);
-    public void OnShopToHomeButton() => StateManager.ChangeState(GameState.Home);
+    public void OnToHomeButton() => StateManager.ChangeState(GameState.Home);
     public void BuyItem1() => Inventory.Instance.BuyItem(0);
     public void BuyItem2() => Inventory.Instance.BuyItem(1);
     public void BuyItem3() => Inventory.Instance.BuyItem(2);
@@ -63,6 +74,12 @@ public class UIManager : Singleton<UIManager>
     public void GetReward1() => Inventory.Instance.GetReward(0);
     public void GetReward2() => Inventory.Instance.GetReward(1);
     public void GetReward3() => Inventory.Instance.GetReward(2);
+    public void FeedButton1() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
+    public void FeedButton2() => Inventory.Instance.FeedButton(Inventory.Instance.expensiveFood);
+    public void FeedButton3() => Inventory.Instance.FeedButton(Inventory.Instance.water);
+    public void FeedButton4() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
+    public void FeedButton5() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
+    public void FeedButton6() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
 
     void Start()
     {
@@ -70,7 +87,7 @@ public class UIManager : Singleton<UIManager>
         homeToShopButton.onClick.AddListener(OnHomeToShopButton);
         homeToFeedButton.onClick.AddListener(OnHomeToFeedButton);
         homeToBattleButton.onClick.AddListener(OnHomeToBattleButton);
-        shopToHomeButton.onClick.AddListener(OnShopToHomeButton);
+        shopToHomeButton.onClick.AddListener(OnToHomeButton);
         shopBuyItem1.onClick.AddListener(BuyItem1);
         shopBuyItem2.onClick.AddListener(BuyItem2);
         shopBuyItem3.onClick.AddListener(BuyItem3);
@@ -80,6 +97,13 @@ public class UIManager : Singleton<UIManager>
         rewardButton1.onClick.AddListener(GetReward1);
         rewardButton2.onClick.AddListener(GetReward2);
         rewardButton3.onClick.AddListener(GetReward3);
+        feedButton1.onClick.AddListener(FeedButton1);
+        feedButton2.onClick.AddListener(FeedButton2);
+        feedButton3.onClick.AddListener(FeedButton3);
+        feedButton4.onClick.AddListener(FeedButton4);
+        feedButton5.onClick.AddListener(FeedButton5);
+        feedButton6.onClick.AddListener(FeedButton6);
+        feedToHomeButton.onClick.AddListener(OnToHomeButton);
     }
     public void ShowState(GameState state)
     {
