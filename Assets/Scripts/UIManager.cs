@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
 
 public class UIManager : Singleton<UIManager>
 {
+    [SerializeField] private GameObject homeOuro;
+
     [Header("UI Panels")]
     [SerializeField] private GameObject homeUI;
     [SerializeField] private GameObject shopUI;
@@ -41,6 +42,8 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private Button rewardButton1;
     [SerializeField] private Button rewardButton2;
     [SerializeField] private Button rewardButton3;
+    [SerializeField] private Button speedUpButton5;
+    [SerializeField] private Button speedUpButton50;
 
 
 
@@ -80,6 +83,9 @@ public class UIManager : Singleton<UIManager>
     public void FeedButton4() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
     public void FeedButton5() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
     public void FeedButton6() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
+    public void SpeedUpButton5() => BattleManager.Instance.SetBattleSpeed(0.1f);
+    public void SpeedUpButton50() => BattleManager.Instance.SetBattleSpeed(0.01f);
+
 
     void Start()
     {
@@ -104,6 +110,9 @@ public class UIManager : Singleton<UIManager>
         feedButton5.onClick.AddListener(FeedButton5);
         feedButton6.onClick.AddListener(FeedButton6);
         feedToHomeButton.onClick.AddListener(OnToHomeButton);
+        speedUpButton5.onClick.AddListener(SpeedUpButton5);
+        speedUpButton50.onClick.AddListener(SpeedUpButton50);
+
     }
     public void ShowState(GameState state)
     {
@@ -139,6 +148,18 @@ public class UIManager : Singleton<UIManager>
         rewardButton3.gameObject.SetActive(active);
     }
 
+    public void SetActiveHomeOuro(bool value)
+    {
+        homeOuro.SetActive(value);
+    }
+
+    private float bornScale = 0.3f;
+    public void UpdateHomeOuro()
+    {
+        float scaleMultiply = Mathf.Sqrt(GameManager.Instance.Power + GameManager.Instance.Health);
+        float newScale = bornScale * scaleMultiply;
+        homeOuro.transform.localScale = new(newScale, newScale);
+    }
 
     public void UpdateMoney(int amount)
     {
@@ -153,11 +174,13 @@ public class UIManager : Singleton<UIManager>
     public void UpdatePower(int power)
     {
         powerText.text = power.ToString();
+        UpdateHomeOuro();
     }
 
     public void UpdateHealth(int health)
     {
         healthText.text = health.ToString();
+        UpdateHomeOuro();
     }
 
     public void UpdateTime(int time)

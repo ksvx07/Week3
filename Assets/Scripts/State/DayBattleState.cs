@@ -7,6 +7,8 @@ public class DayBattleState : BaseState
     public override void EnterState()
     {
         BattleManager.Instance.StartDayBattle();
+        UIManager.Instance.SetActiveHomeOuro(false);
+
     }
 
     // public override void ExitState()

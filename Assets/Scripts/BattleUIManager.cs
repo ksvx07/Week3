@@ -24,11 +24,16 @@ public class BattleUIManager : MonoBehaviour
 
     private Vector2Int playerGridNum = new(1, 1);
     private Vector2Int enemyGridNum = new(1, 1);
-
-    private int playerNum = 0;
     private int enemyNum = 0;
 
     private Vector2 playerScale = new(1f, 1f);
+
+    private DamagePopupSpawner damagePopupSpawner;
+
+    void Start()
+    {
+        damagePopupSpawner = GetComponent<DamagePopupSpawner>();
+    }
 
     public void EndBattle()
     {
@@ -60,7 +65,6 @@ public class BattleUIManager : MonoBehaviour
 
     private void InitRectNum()
     {
-        playerNum = 0;
         enemyNum = 0;
         playerGridNum.x = (int)(playerRect.x / (playerSize.x * playerScale.x * rightMargin));
         playerGridNum.y = (int)(playerRect.y / (playerSize.y * playerScale.y * topMargin));
@@ -103,24 +107,6 @@ public class BattleUIManager : MonoBehaviour
         }
 
     }
-
-    // private Vector2 SpawnPlayerPosition()
-    // {
-    //     Vector2Int playerGrid = Vector2Int.zero;
-    //     int i = playerNum;
-    //     while (i >= playerGridNum.x)
-    //     {
-    //         if (playerGrid.y > playerGridNum.y)
-    //             break;
-    //         i -= playerGridNum.x;
-    //         playerGrid.y++;
-    //     }
-    //     playerGrid.x = i;
-    //     playerNum++;
-    //     playerGridList.Add(playerGrid);
-    //     return new Vector2(playerGrid.x * playerSize.x * playerScale.x * topMargin, playerGrid.y * playerSize.y * playerScale.y * rightMargin);
-    // }
-
     private Vector2 SpawnEnemyPosition()
     {
         Vector2Int enemyGrid = Vector2Int.zero;
@@ -156,9 +142,10 @@ public class BattleUIManager : MonoBehaviour
     private int playerAttackNum = 0;
 
     private int attackCount = 0;
-    public void AttackPlayerAction()
+    public void AttackPlayerAction(int damage, int targetNum)
     {
         playerParent.GetChild(playerAttackNum).GetComponent<Animator>().SetTrigger("Attack");
+        damagePopupSpawner.SpawnDamage(damage, enemyParent.GetChild(targetNum).transform.position);
         attackCount++;
         if (attackCount >= BattleManager.Instance.attackCount)
         {
@@ -173,9 +160,17 @@ public class BattleUIManager : MonoBehaviour
     }
 
     private int enemyAttackNum = 0;
-    public void AttackEnemyAction()
+    public void AttackEnemyAction(int damage, int targetNum)
     {
         enemyParent.GetChild(enemyAttackNum).GetComponent<Animator>().SetTrigger("Attack");
+        damagePopupSpawner.SpawnDamage(damage, playerParent.GetChild(targetNum).transform.position);
+        enemyAttackNum++;
+    }
+
+    public void AttackAllEnemyAction(int damage)
+    {
+        enemyParent.GetChild(enemyAttackNum).GetComponent<Animator>().SetTrigger("Attack");
+        damagePopupSpawner.SpawnDamage(damage, playerParent.transform.position);
         enemyAttackNum++;
     }
 

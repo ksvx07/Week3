@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 public class BattleManager : Singleton<BattleManager>
 {
-    [SerializeField] private float battleDelay = 0.1f;
+    [SerializeField] private float battleDelay = 0.5f;
 
     private List<Unit> playerTeam;
     private List<Unit> enemyTeam;
@@ -16,6 +16,7 @@ public class BattleManager : Singleton<BattleManager>
     public int attackCount = 1;
     private BattleUIManager battleUIManager;
 
+
     void Start()
     {
         battleUIManager = GetComponent<BattleUIManager>();
@@ -23,8 +24,13 @@ public class BattleManager : Singleton<BattleManager>
         addedEnemyTeam = new();
     }
 
+    public void SetBattleSpeed(float speed)
+    {
+        battleDelay = speed;
+    }
     public void StartBattle()
     {
+        battleDelay = 0.5f;
         int life = 0;
         attackCount = 1;
         foreach (Item stamp in Inventory.Instance.myStamps)
@@ -120,7 +126,7 @@ public class BattleManager : Singleton<BattleManager>
                         Unit target = playerTeam[targetNum];
                         Debug.Log($"{enemy.name} attacks {target.name}!");
                         enemy.Attack(target);
-                        battleUIManager.AttackEnemyAction();
+                        battleUIManager.AttackEnemyAction(enemy.AttackPower, targetNum);
                         ApplyHitStamps(target);
                         if (target.IsDead())
                         {
@@ -139,7 +145,7 @@ public class BattleManager : Singleton<BattleManager>
                         List<int> deadList = new();
                         int i = 0;
                         enemy.AttackAll(playerTeam);
-                        battleUIManager.AttackEnemyAction();
+                        battleUIManager.AttackAllEnemyAction(enemy.AttackPower);
                         foreach (Unit tar in playerTeam)
                         {
                             ApplyHitStamps(tar);
@@ -191,9 +197,10 @@ public class BattleManager : Singleton<BattleManager>
                 {
                     if (!player.IsDead() && enemyTeam.Count > 0)
                     {
-                        var target = enemyTeam[Random.Range(0, enemyTeam.Count)];
+                        int targetNum = Random.Range(0, enemyTeam.Count);
+                        var target = enemyTeam[targetNum];
                         player.Attack(target);
-                        battleUIManager.AttackPlayerAction();
+                        battleUIManager.AttackPlayerAction(player.AttackPower, targetNum);
                         ApplyAttackStamps(player, target);
                         target.Revive();
                         if (target.IsDead())

@@ -39,6 +39,12 @@ public class Inventory : Singleton<Inventory>
         stampsList.Add(new(fiveTimesPowerTempAfterHitAndSurvive, stampPrice, 0));
         stampsList.Add(new(duplicateAfterAttackStamp, stampPrice, 0));
         stampsList.Add(new(doubleAttackStamp, stampPrice, 0));
+
+        // myStamps.Add(new(moreLifeStamp, stampPrice, 0));
+        // myStamps.Add(new(moreLifeStamp, stampPrice, 0));
+        // myStamps.Add(new(moreLifeStamp, stampPrice, 0));
+        // myStamps.Add(new(duplicateAfterAttackStamp, stampPrice, 0));
+        // myStamps.Add(new(doubleAttackStamp, stampPrice, 0));
     }
 
 

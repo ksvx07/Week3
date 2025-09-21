@@ -8,7 +8,7 @@ public class HomeState : BaseState
 
     public override void EnterState()
     {
+        UIManager.Instance.SetActiveHomeOuro(true);
         GameManager.Instance.NextTime();
-        // Debug.Log("시간지남");
     }
 }

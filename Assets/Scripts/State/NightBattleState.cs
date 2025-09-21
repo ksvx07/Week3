@@ -8,10 +8,10 @@ public class NightBattleState : BaseState
     public override void EnterState()
     {
         BattleManager.Instance.StartNightBattle();
+        UIManager.Instance.SetActiveHomeOuro(false);
     }
 
-    public override void ExitState()
-    {
-        // GameManager.Instance.NextTime();
-    }
+    // public override void ExitState()
+    // {
+    // }
 }
