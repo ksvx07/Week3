@@ -26,6 +26,7 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private Button homeToShopButton;
     [SerializeField] private Button homeToFeedButton;
     [SerializeField] private Button homeToBattleButton;
+    [SerializeField] private Button homeToNightBattleButton;
 
 
     [Header("Shop Buttons")]
@@ -44,12 +45,20 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private Button rewardButton3;
     [SerializeField] private Button speedUpButton5;
     [SerializeField] private Button speedUpButton50;
+    [SerializeField] private TooltipTrigger battleTooltip;
+
 
 
 
     [Header("Items")]
     [SerializeField] private Transform stampParent;
     [SerializeField] private GameObject stampPrefab;
+    [SerializeField] private Tooltip StampListTooltip;
+    [SerializeField] private TextMeshProUGUI cheapFoodNumText;
+    [SerializeField] private TextMeshProUGUI expensiveFoodNumText;
+    [SerializeField] private TextMeshProUGUI waterNumText;
+    [SerializeField] private GameObject itemListPanel;
+
 
 
     [Header("Feed Buttons")]
@@ -57,17 +66,50 @@ public class UIManager : Singleton<UIManager>
     [SerializeField] private Button feedButton1;
     [SerializeField] private Button feedButton2;
     [SerializeField] private Button feedButton3;
-    [SerializeField] private Button feedButton4;
-    [SerializeField] private Button feedButton5;
-    [SerializeField] private Button feedButton6;
+    // [SerializeField] private Button feedButton4;
+    // [SerializeField] private Button feedButton5;
+    // [SerializeField] private Button feedButton6;
 
+    [Header("Heart")]
+    [SerializeField] private TextMeshProUGUI heartText;
+    [SerializeField] private GameObject heartObj;
+
+    [Header("Next Boss")]
+    [SerializeField] private GameObject nextBossPanel;
+    [SerializeField] private TextMeshProUGUI nextBossPowerText;
+    [SerializeField] private TextMeshProUGUI nextBossHealthText;
+
+    [Header("Title")]
+
+    [SerializeField] private GameObject title;
+    [SerializeField] private GameObject title2;
+    [SerializeField] private Button titleButton;
+    [SerializeField] private Button titleButton2;
+    [SerializeField] private GameObject ending;
+    [SerializeField] private GameObject badEnding;
+    [SerializeField] private GameObject me;
+
+    public void Ending()
+    {
+        ending.SetActive(true);
+        if (GameManager.Instance.Heart >= 10)
+            me.SetActive(true);
+        else
+            me.SetActive(false);
+        ending.GetComponent<Animator>().SetTrigger("Ending");
+    }
+
+    public void BadEnding()
+    {
+        badEnding.SetActive(true);
+    }
 
 
     public void OnHomeToWorkButton() => StateManager.ChangeState(GameState.Work);
     public void OnHomeToShopButton() => StateManager.ChangeState(GameState.Shop);
-    public void OnHomeToFeedButton() => StateManager.ChangeState(GameState.Feed);
     public void OnHomeToBattleButton() => StateManager.ChangeState(GameState.DayBattle);
     public void OnToHomeButton() => StateManager.ChangeState(GameState.Home);
+    private void OnHomeToNightBattleButton() => StateManager.ChangeState(GameState.NightBattle);
     public void BuyItem1() => Inventory.Instance.BuyItem(0);
     public void BuyItem2() => Inventory.Instance.BuyItem(1);
     public void BuyItem3() => Inventory.Instance.BuyItem(2);
@@ -80,19 +122,46 @@ public class UIManager : Singleton<UIManager>
     public void FeedButton1() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
     public void FeedButton2() => Inventory.Instance.FeedButton(Inventory.Instance.expensiveFood);
     public void FeedButton3() => Inventory.Instance.FeedButton(Inventory.Instance.water);
-    public void FeedButton4() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
-    public void FeedButton5() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
-    public void FeedButton6() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
+    // public void FeedButton4() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
+    // public void FeedButton5() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
+    // public void FeedButton6() => Inventory.Instance.FeedButton(Inventory.Instance.cheapFood);
     public void SpeedUpButton5() => BattleManager.Instance.SetBattleSpeed(0.1f);
     public void SpeedUpButton50() => BattleManager.Instance.SetBattleSpeed(0.01f);
 
+    private string doublePowerAfterAttackStampTooltip = "공격할 때마다 공격력이\n영구적으로 2배 증가한다";
+    private string moreLifeStampTooltip = "체력이 0이 되었을때 한 번\n최대 체력으로 부활한다";
+    private string increaseMaxHealthAfterHitStampTooltip = "공격을 받을 때마다 최대 체력이\n영구적으로 20 증가한다";
+    private string fiveTimesPowerTempAfterHitAndSurviveTooltip = "공격을 받고 생존할 때마다\n공격력이 5배 증가한다";
+    private string duplicateAfterAttackStampTooltip = "공격할 때마다 동일한 분신을 소환한다";
+    private string doubleAttackStampTooltip = "매 턴 두번 공격한다";
+
+
+
+    public void SetCheapFoodNumUI(int num) => cheapFoodNumText.text = num.ToString();
+    public void SetExpensiveFoodNumUI(int num) => expensiveFoodNumText.text = num.ToString();
+    public void SetWaterNumUI(int num) => waterNumText.text = num.ToString();
+
+    private void OnTitle1() => Destroy(title);
+    private void OnTitle2() => Destroy(title2);
+    protected override void Awake()
+    {
+        base.Awake();
+
+        stampTooltipText.Add(Inventory.Instance.doublePowerAfterAttackStamp, doublePowerAfterAttackStampTooltip);
+        stampTooltipText.Add(Inventory.Instance.moreLifeStamp, moreLifeStampTooltip);
+        stampTooltipText.Add(Inventory.Instance.increaseMaxHealthAfterHitStamp, increaseMaxHealthAfterHitStampTooltip);
+        stampTooltipText.Add(Inventory.Instance.fiveTimesPowerTempAfterHitAndSurvive, fiveTimesPowerTempAfterHitAndSurviveTooltip);
+        stampTooltipText.Add(Inventory.Instance.duplicateAfterAttackStamp, duplicateAfterAttackStampTooltip);
+        stampTooltipText.Add(Inventory.Instance.doubleAttackStamp, doubleAttackStampTooltip);
+    }
 
     void Start()
     {
         homeToWorkButton.onClick.AddListener(OnHomeToWorkButton);
         homeToShopButton.onClick.AddListener(OnHomeToShopButton);
-        homeToFeedButton.onClick.AddListener(OnHomeToFeedButton);
+        homeToFeedButton.onClick.AddListener(OpenFeedMenu);
         homeToBattleButton.onClick.AddListener(OnHomeToBattleButton);
+        homeToNightBattleButton.onClick.AddListener(OnHomeToNightBattleButton);
         shopToHomeButton.onClick.AddListener(OnToHomeButton);
         shopBuyItem1.onClick.AddListener(BuyItem1);
         shopBuyItem2.onClick.AddListener(BuyItem2);
@@ -106,13 +175,78 @@ public class UIManager : Singleton<UIManager>
         feedButton1.onClick.AddListener(FeedButton1);
         feedButton2.onClick.AddListener(FeedButton2);
         feedButton3.onClick.AddListener(FeedButton3);
-        feedButton4.onClick.AddListener(FeedButton4);
-        feedButton5.onClick.AddListener(FeedButton5);
-        feedButton6.onClick.AddListener(FeedButton6);
-        feedToHomeButton.onClick.AddListener(OnToHomeButton);
+        // feedButton4.onClick.AddListener(FeedButton4);
+        // feedButton5.onClick.AddListener(FeedButton5);
+        // feedButton6.onClick.AddListener(FeedButton6);
+        feedToHomeButton.onClick.AddListener(CloseFeedMenu);
         speedUpButton5.onClick.AddListener(SpeedUpButton5);
         speedUpButton50.onClick.AddListener(SpeedUpButton50);
+        UIManager.Instance.SetDayBattleTooltip(UnitList.enemies[GameManager.Instance.Day - 1].AttackPower, UnitList.bosses[GameManager.Instance.Day - 1].MaxHP);
+        titleButton.onClick.AddListener(OnTitle1);
+        titleButton2.onClick.AddListener(OnTitle2);
+    }
 
+    public void SetDayBattleTooltip(int power, int health)
+    {
+        battleTooltip.tooltipText = $"돌아다니면서 시비건다\n왠지 {power}/{health}의 적이 나올 것 같다";
+    }
+
+    public void SetNextBossInfo(int power, int health)
+    {
+        nextBossPowerText.text = power.ToString();
+        nextBossHealthText.text = health.ToString();
+    }
+
+    public void SetActiveItemListPanel(bool value)
+    {
+        itemListPanel.SetActive(value);
+        nextBossPanel.SetActive(value);
+    }
+
+    public void SetUIWhenNight()
+    {
+        homeToNightBattleButton.gameObject.SetActive(true);
+        homeToWorkButton.interactable = false;
+        homeToShopButton.interactable = false;
+        homeToBattleButton.interactable = false;
+    }
+
+    public void SetUIWhenDay()
+    {
+        homeToNightBattleButton.gameObject.SetActive(false);
+        homeToWorkButton.interactable = true;
+        homeToShopButton.interactable = true;
+        homeToBattleButton.interactable = true;
+    }
+
+
+    public void OpenFeedMenu()
+    {
+        homeUI.SetActive(false);
+        feedUI.SetActive(true);
+    }
+
+    public void CloseFeedMenu()
+    {
+        feedUI.SetActive(false);
+        homeUI.SetActive(true);
+    }
+
+    // public void SetActiveHeart(bool value)
+    // {
+    //     heartObj.SetActive(value);
+    // }
+
+    public void SetHeart(int heart)
+    {
+        if (heart >= 10)
+        {
+            heartText.text = "MAX";
+        }
+        else
+        {
+            heartText.text = heart.ToString();
+        }
     }
     public void ShowState(GameState state)
     {
@@ -131,13 +265,35 @@ public class UIManager : Singleton<UIManager>
         shopBuyItem4.GetComponentInChildren<TextMeshProUGUI>().text = stamps[0].itemName;
         shopBuyItem5.GetComponentInChildren<TextMeshProUGUI>().text = stamps[1].itemName;
         shopBuyItem6.GetComponentInChildren<TextMeshProUGUI>().text = stamps[2].itemName;
+
+        shopBuyItem4.GetComponent<TooltipTrigger>().tooltipText = stampTooltipText[stamps[0].itemName];
+        shopBuyItem5.GetComponent<TooltipTrigger>().tooltipText = stampTooltipText[stamps[1].itemName];
+        shopBuyItem6.GetComponent<TooltipTrigger>().tooltipText = stampTooltipText[stamps[2].itemName];
     }
+
+    Dictionary<string, string> stampTooltipText = new();
+
 
     public void UpdateNightRewardLists(List<Item> stamps)
     {
         rewardButton1.GetComponentInChildren<TextMeshProUGUI>().text = stamps[0].itemName;
         rewardButton2.GetComponentInChildren<TextMeshProUGUI>().text = stamps[1].itemName;
         rewardButton3.GetComponentInChildren<TextMeshProUGUI>().text = stamps[2].itemName;
+
+        rewardButton1.GetComponent<TooltipTrigger>().tooltipText = stampTooltipText[stamps[0].itemName];
+        rewardButton2.GetComponent<TooltipTrigger>().tooltipText = stampTooltipText[stamps[1].itemName];
+        rewardButton3.GetComponent<TooltipTrigger>().tooltipText = stampTooltipText[stamps[2].itemName];
+    }
+
+    public void UpdateDayRewardLists()
+    {
+        rewardButton1.GetComponentInChildren<TextMeshProUGUI>().text = $"{4000 * GameManager.Instance.Day}원";
+        rewardButton2.GetComponentInChildren<TextMeshProUGUI>().text = $"공격력 + {10 * GameManager.Instance.Day}";
+        rewardButton3.GetComponentInChildren<TextMeshProUGUI>().text = $"체력 + {10 * GameManager.Instance.Day}";
+
+        rewardButton1.GetComponent<TooltipTrigger>().tooltipText = "";
+        rewardButton2.GetComponent<TooltipTrigger>().tooltipText = "";
+        rewardButton3.GetComponent<TooltipTrigger>().tooltipText = "";
     }
 
 
@@ -202,6 +358,8 @@ public class UIManager : Singleton<UIManager>
     {
         GameObject stampObject = Instantiate(stampPrefab, stampParent);
         stampObject.GetComponent<TextMeshProUGUI>().text = stampName;
+        stampObject.GetComponent<TooltipTrigger>().tooltip = StampListTooltip;
+        stampObject.GetComponent<TooltipTrigger>().tooltipText = stampTooltipText[stampName];
     }
 
 }

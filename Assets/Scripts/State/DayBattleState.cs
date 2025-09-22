@@ -8,7 +8,7 @@ public class DayBattleState : BaseState
     {
         BattleManager.Instance.StartDayBattle();
         UIManager.Instance.SetActiveHomeOuro(false);
-
+        UIManager.Instance.SetActiveItemListPanel(false);
     }
 
     // public override void ExitState()

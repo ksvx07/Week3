@@ -9,6 +9,7 @@ public class NightBattleState : BaseState
     {
         BattleManager.Instance.StartNightBattle();
         UIManager.Instance.SetActiveHomeOuro(false);
+        UIManager.Instance.SetActiveItemListPanel(false);
     }
 
     // public override void ExitState()

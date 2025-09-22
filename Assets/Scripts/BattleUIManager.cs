@@ -17,6 +17,13 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private Transform enemyParent;
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private GameObject enemyPrefab;
+    [SerializeField] private GameObject earthPrefab;
+
+    [SerializeField] private Transform playerHealthBarRoot;
+    [SerializeField] private Transform enemyHealthBarRoot;
+    [SerializeField] private GameObject bossAOE;
+
+
 
 
     public List<Vector2Int> playerGridList;
@@ -29,10 +36,12 @@ public class BattleUIManager : MonoBehaviour
     private Vector2 playerScale = new(1f, 1f);
 
     private DamagePopupSpawner damagePopupSpawner;
+    private HealthBarSpawner healthBarSpanwer;
 
     void Start()
     {
         damagePopupSpawner = GetComponent<DamagePopupSpawner>();
+        healthBarSpanwer = GetComponent<HealthBarSpawner>();
     }
 
     public void EndBattle()
@@ -42,6 +51,14 @@ public class BattleUIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
         foreach (Transform child in enemyParent)
+        {
+            Destroy(child.gameObject);
+        }
+        foreach (Transform child in playerHealthBarRoot)
+        {
+            Destroy(child.gameObject);
+        }
+        foreach (Transform child in enemyHealthBarRoot)
         {
             Destroy(child.gameObject);
         }
@@ -63,6 +80,11 @@ public class BattleUIManager : MonoBehaviour
         playerScale = enemyPrefab.transform.localScale * Mathf.Sqrt(playerValue / enemyValue);
     }
 
+    public void ActiveBossAOE()
+    {
+        bossAOE.SetActive(true);
+    }
+
     private void InitRectNum()
     {
         enemyNum = 0;
@@ -78,6 +100,8 @@ public class BattleUIManager : MonoBehaviour
         await Task.Delay(700);
         Destroy(playerParent.GetChild(num).gameObject);
     }
+
+
 
     private Vector2 SpawnPlayerPosition()
     {
@@ -124,28 +148,42 @@ public class BattleUIManager : MonoBehaviour
         return new Vector2(enemyGrid.x * enemySize.x * topMargin, enemyGrid.y * enemySize.y * rightMargin);
     }
 
-    public void SpawnPlayer()
+    public void SpawnPlayer(Unit player)
     {
         Vector2 parentPos = new(playerParent.position.x, playerParent.position.y);
         Vector2 randPos = new(Random.Range(-randPosRange.x, randPosRange.x) * playerScale.x, Random.Range(-randPosRange.y, randPosRange.y) * playerScale.y);
-        GameObject obj = Instantiate(playerPrefab, SpawnPlayerPosition() + parentPos + randPos, Quaternion.identity, playerParent);
+        Vector2 playerPos = SpawnPlayerPosition() + parentPos + randPos;
+        GameObject obj = Instantiate(playerPrefab, playerPos, Quaternion.identity, playerParent);
+        HealthBar thisHealthbar = healthBarSpanwer.SpawnPlayerHealthBar(new(playerPos.x, playerPos.y, 0f), player.MaxHP, playerScale);
+        thisHealthbar.SetHealth(player.CurrentHP);
         obj.transform.localScale = playerScale;
     }
 
-    public void SpawnEnemy()
+    public void SpawnEnemy(Unit enemy)
     {
         Vector2 parentPos = new(enemyParent.position.x, enemyParent.position.y);
         Vector2 randPos = new(Random.Range(-randPosRange.x, randPosRange.x), Random.Range(-randPosRange.y, randPosRange.y));
-        Instantiate(enemyPrefab, -SpawnEnemyPosition() + parentPos + randPos, Quaternion.identity, enemyParent);
+        Vector2 enemyPos = -SpawnEnemyPosition() + parentPos + randPos;
+        if (GameManager.Instance.Day == 5 && GameManager.Instance.Time == 3)
+        {
+            Instantiate(earthPrefab, enemyPos, Quaternion.identity, enemyParent);
+        }
+        else
+        {
+            Instantiate(enemyPrefab, enemyPos, Quaternion.identity, enemyParent);
+        }
+        HealthBar thisHealthbar = healthBarSpanwer.SpawnEnemyHealthBar(new(enemyPos.x, enemyPos.y, 0f), enemy.MaxHP);
+        thisHealthbar.SetHealth(enemy.CurrentHP);
     }
 
     private int playerAttackNum = 0;
 
     private int attackCount = 0;
-    public void AttackPlayerAction(int damage, int targetNum)
+    public void AttackPlayerAction(int damage, int targetNum, Unit target)
     {
         playerParent.GetChild(playerAttackNum).GetComponent<Animator>().SetTrigger("Attack");
         damagePopupSpawner.SpawnDamage(damage, enemyParent.GetChild(targetNum).transform.position);
+        enemyHealthBarRoot.GetChild(targetNum).GetComponent<HealthBar>().SetHealth(target.CurrentHP);
         attackCount++;
         if (attackCount >= BattleManager.Instance.attackCount)
         {
@@ -160,17 +198,30 @@ public class BattleUIManager : MonoBehaviour
     }
 
     private int enemyAttackNum = 0;
-    public void AttackEnemyAction(int damage, int targetNum)
+
+
+    public void ReviveHealthbar(int targetNum)
+    {
+        playerHealthBarRoot.GetChild(targetNum).GetComponent<HealthBar>().SetToMaxHealth();
+    }
+    public void AttackEnemyAction(int damage, int targetNum, Unit target)
     {
         enemyParent.GetChild(enemyAttackNum).GetComponent<Animator>().SetTrigger("Attack");
         damagePopupSpawner.SpawnDamage(damage, playerParent.GetChild(targetNum).transform.position);
+        playerHealthBarRoot.GetChild(targetNum).GetComponent<HealthBar>().SetHealth(target.CurrentHP);
         enemyAttackNum++;
     }
 
-    public void AttackAllEnemyAction(int damage)
+    public void AttackAllEnemyAction(int damage, List<Unit> playerList)
     {
         enemyParent.GetChild(enemyAttackNum).GetComponent<Animator>().SetTrigger("Attack");
         damagePopupSpawner.SpawnDamage(damage, playerParent.transform.position);
+        int i = 0;
+        foreach (Unit player in playerList)
+        {
+            playerHealthBarRoot.GetChild(i).GetComponent<HealthBar>().SetHealth(player.CurrentHP);
+            i++;
+        }
         enemyAttackNum++;
     }
 

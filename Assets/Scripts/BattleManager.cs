@@ -46,8 +46,8 @@ public class BattleManager : Singleton<BattleManager>
             new(GameManager.Instance.ouroboros, GameManager.Instance.Power, GameManager.Instance.Health, life)
         };
         battleUIManager.InitBattle(playerTeam[0], enemyTeam[0]);
-        battleUIManager.SpawnPlayer();
-        battleUIManager.SpawnEnemy();
+        battleUIManager.SpawnPlayer(playerTeam[0]);
+        battleUIManager.SpawnEnemy(enemyTeam[0]);
 
         StartCoroutine(BattleLoop());
     }
@@ -72,6 +72,11 @@ public class BattleManager : Singleton<BattleManager>
         StartBattle();
     }
 
+    public void Ending()
+    {
+
+    }
+
     public void EndBattle()
     {
         if (playerTeam.Count > 0)
@@ -79,10 +84,15 @@ public class BattleManager : Singleton<BattleManager>
             if (dayTime)
             {
                 // 낮에 이겼을 시
+                Inventory.Instance.UpdateDayReward();
                 UIManager.Instance.SetActiveReward(true);
             }
             else
             {
+                if (GameManager.Instance.Day == 5)
+                {
+                    UIManager.Instance.Ending();
+                }
                 // 밤에 이겼을 시
                 Inventory.Instance.UpdateNightReward();
                 UIManager.Instance.SetActiveReward(true);
@@ -93,6 +103,10 @@ public class BattleManager : Singleton<BattleManager>
         }
         else
         {
+            if (GameManager.Instance.Day == 5)
+            {
+                UIManager.Instance.BadEnding();
+            }
             GoToHome(); // 집으로 돌아가기
         }
 
@@ -126,14 +140,16 @@ public class BattleManager : Singleton<BattleManager>
                         Unit target = playerTeam[targetNum];
                         Debug.Log($"{enemy.name} attacks {target.name}!");
                         enemy.Attack(target);
-                        battleUIManager.AttackEnemyAction(enemy.AttackPower, targetNum);
+                        battleUIManager.AttackEnemyAction(enemy.AttackPower, targetNum, target);
                         ApplyHitStamps(target);
                         if (target.IsDead())
                         {
                             GameManager.Instance.SetPower(GameManager.Instance.Power + 1);
                             GameManager.Instance.SetHealth(GameManager.Instance.Health + 1);
                         }
-                        target.Revive();
+                        var isRevive = target.Revive();
+                        if (isRevive)
+                            battleUIManager.ReviveHealthbar(targetNum);
                         if (target.IsDead())
                         {
                             playerTeam.Remove(target);
@@ -145,7 +161,8 @@ public class BattleManager : Singleton<BattleManager>
                         List<int> deadList = new();
                         int i = 0;
                         enemy.AttackAll(playerTeam);
-                        battleUIManager.AttackAllEnemyAction(enemy.AttackPower);
+                        battleUIManager.AttackAllEnemyAction(enemy.AttackPower, playerTeam);
+                        battleUIManager.ActiveBossAOE();
                         foreach (Unit tar in playerTeam)
                         {
                             ApplyHitStamps(tar);
@@ -154,7 +171,9 @@ public class BattleManager : Singleton<BattleManager>
                                 GameManager.Instance.SetPower(GameManager.Instance.Power + 1);
                                 GameManager.Instance.SetHealth(GameManager.Instance.Health + 1);
                             }
-                            tar.Revive();
+                            var isRevive = tar.Revive();
+                            if (isRevive)
+                                battleUIManager.ReviveHealthbar(i);
                             if (tar.IsDead())
                                 deadList.Add(i);
                             i++;
@@ -200,7 +219,7 @@ public class BattleManager : Singleton<BattleManager>
                         int targetNum = Random.Range(0, enemyTeam.Count);
                         var target = enemyTeam[targetNum];
                         player.Attack(target);
-                        battleUIManager.AttackPlayerAction(player.AttackPower, targetNum);
+                        battleUIManager.AttackPlayerAction(player.AttackPower, targetNum, target);
                         ApplyAttackStamps(player, target);
                         target.Revive();
                         if (target.IsDead())
@@ -244,7 +263,7 @@ public class BattleManager : Singleton<BattleManager>
         Unit clone = player.Clone();
         clone.name = GameManager.Instance.ouroborosClone;
         addedPlayerTeam.Add(clone);
-        battleUIManager.SpawnPlayer();
+        battleUIManager.SpawnPlayer(clone);
     }
 
     private void ApplyHitStamps(Unit player)
@@ -261,7 +280,7 @@ public class BattleManager : Singleton<BattleManager>
     private void ApplyIncreaseMaxHealthAfterHitStamp(Unit player)
     {
         if (player.name == GameManager.Instance.ouroboros)
-            GameManager.Instance.SetHealth(GameManager.Instance.Health + 10);
+            GameManager.Instance.SetHealth(GameManager.Instance.Health + 20);
     }
 
     private void ApplyFiveTimesPowerTempAfterHitAndSurvive(Unit player)

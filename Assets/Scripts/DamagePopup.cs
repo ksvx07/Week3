@@ -52,6 +52,6 @@ public class DamagePopup : MonoBehaviour
             t += Time.unscaledDeltaTime; // timescale 영향 안받게
             yield return null;
         }
-        gameObject.SetActive(false);
+        Destroy(gameObject);
     }
 }

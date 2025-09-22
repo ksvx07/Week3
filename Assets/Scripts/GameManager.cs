@@ -11,7 +11,7 @@ public class GameManager : Singleton<GameManager>
     public int Health { get; private set; } = 1;
     public int Day { get; private set; } = 1;
     public int Time { get; private set; } = 0;
-    public int Love { get; private set; } = 0;
+    public int Heart { get; private set; } = 0;
 
     public string ouroboros = "Ouroboros";
     public string ouroborosClone = "OuroborosClone";
@@ -39,7 +39,6 @@ public class GameManager : Singleton<GameManager>
     {
         Health = health;
         UIManager.Instance.UpdateHealth(Health);
-
     }
     public void NextDay()
     {
@@ -52,7 +51,7 @@ public class GameManager : Singleton<GameManager>
         Time++;
         if (Time == 3)
         {
-            StateManager.ChangeState(GameState.NightBattle);
+            UIManager.Instance.SetUIWhenNight();
         }
         else if (Time > 3)
         {
@@ -62,8 +61,9 @@ public class GameManager : Singleton<GameManager>
         UIManager.Instance.UpdateTime(Time);
     }
 
-    public void GetLove()
+    public void SetHeart(int value)
     {
-        Love++;
+        Heart = value;
+        UIManager.Instance.SetHeart(Heart);
     }
 }

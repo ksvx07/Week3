@@ -12,7 +12,7 @@ public class Inventory : Singleton<Inventory>
 
     public string cheapFood = "삼각김밥";
     public string expensiveFood = "스테이크";
-    public string water = "물";
+    public string water = "콜라";
 
 
     public string doublePowerAfterAttackStamp = "분노";
@@ -59,6 +59,13 @@ public class Inventory : Singleton<Inventory>
                     GameManager.Instance.SetMoney(GameManager.Instance.Money - item.price);
                     item.quantity++;
                     Debug.Log($"구매 완료! 현재 수량 : {item.quantity}");
+
+                    if (item.itemName == cheapFood)
+                        UIManager.Instance.SetCheapFoodNumUI(item.quantity);
+                    else if (item.itemName == expensiveFood)
+                        UIManager.Instance.SetExpensiveFoodNumUI(item.quantity);
+                    else if (item.itemName == water)
+                        UIManager.Instance.SetWaterNumUI(item.quantity);
                 }
             }
         }
@@ -88,14 +95,19 @@ public class Inventory : Singleton<Inventory>
                     if (foodName == cheapFood)
                     {
                         GameManager.Instance.SetHealth(GameManager.Instance.Health + 2);
+                        GameManager.Instance.SetHeart(GameManager.Instance.Heart + 1);
+                        UIManager.Instance.SetCheapFoodNumUI(item.quantity);
                     }
                     else if (foodName == expensiveFood)
                     {
                         GameManager.Instance.SetHealth(GameManager.Instance.Health * 2);
+                        GameManager.Instance.SetHeart(GameManager.Instance.Heart + 3);
+                        UIManager.Instance.SetExpensiveFoodNumUI(item.quantity);
                     }
                     else if (foodName == water)
                     {
                         GameManager.Instance.SetPower(GameManager.Instance.Power + 1);
+                        UIManager.Instance.SetWaterNumUI(item.quantity);
                     }
                 }
                 else
@@ -120,10 +132,21 @@ public class Inventory : Singleton<Inventory>
         UIManager.Instance.UpdateNightRewardLists(nightReward);
     }
 
+    public void UpdateDayReward()
+    {
+        UIManager.Instance.UpdateDayRewardLists();
+    }
+
     public void GetReward(int index)
     {
         if (BattleManager.Instance.dayTime)
         {
+            if (index == 0)
+                GameManager.Instance.SetMoney(GameManager.Instance.Money + 4000 * GameManager.Instance.Day);
+            else if (index == 1)
+                GameManager.Instance.SetPower(GameManager.Instance.Power + 10 * GameManager.Instance.Day);
+            else if (index == 2)
+                GameManager.Instance.SetHealth(GameManager.Instance.Health + 10 * GameManager.Instance.Day);
 
         }
         else
@@ -158,11 +181,6 @@ public class Inventory : Singleton<Inventory>
     public List<Item> GetRandomItems(List<Item> items, int count)
     {
         List<Item> temp = new List<Item>(items); // 원본 안 건드리고 복사
-        for (int i = 0; i < temp.Count; i++)
-        {
-            int rand = Random.Range(i, temp.Count);
-            (temp[i], temp[rand]) = (temp[rand], temp[i]); // swap
-        }
         return temp.Take(count).ToList();
     }
 }

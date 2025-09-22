@@ -46,13 +46,15 @@ public class Unit
         return CurrentHP <= 0;
     }
 
-    public void Revive()
+    public bool Revive()
     {
         if (Life > 0)
         {
             Life--;
             CurrentHP = MaxHP;
+            return true;
         }
+        return false;
     }
 
     public Unit Clone()
